@@ -10,8 +10,8 @@ sta_403 = {'code': 403, 'message': 'You can not do this.'}
 sta_404 = {'code': 404, 'message': 'Not found.'}
 
 
-def get_response(data, status_dic):
-    return jsonify({'data': data, 'status': status_dic})
+def get_response(result, status_dic):
+    return jsonify({'result': result, 'status': status_dic})
 
 
 def normal_response(status_dic):
