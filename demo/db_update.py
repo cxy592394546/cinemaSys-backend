@@ -4,7 +4,7 @@ import pymysql
 
 def update(datatype, args):
     # 打开数据库连接
-    db = pymysql.connect("106.14.220.105", "qingxu", "qingxu", "cinema_db")
+    db = pymysql.connect(host, username, password, database)
 
     # 使用cursor()方法获取操作游标 
     cursor = db.cursor()
