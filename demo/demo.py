@@ -11,11 +11,11 @@ from db_delete import *
 from db_search import *
 
 app = Flask(__name__)
-cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
+cors = CORS(app, resources={r"/v1/*": {"origins": "*"}})
 
 api = Api(app, version='1.0', title='Cinema Microservice', description='APIs of Cinema Microservice', )
 
-ns = api.namespace('api', path='/api/', description='APIs of Cinema Microservice')
+ns = api.namespace('api', path='/v1/', description='APIs of Cinema Microservice')
 
 cinema_info = api.model('Cinema', {  # 返回值模型
     'cinemaId': fields.Integer(required=True, description='The cinema unique identifier'),
@@ -71,74 +71,17 @@ session_to_delete = api.model("sId", {
 })
 
 
-# GET METHOD
-class GetCinemaInfo(Resource):
+# Cinema Model
+class Cinema(Resource):
     @ns.response(200, "Success response", cinema_info)  # 对应解析文档返回值
     def get(self):
         cinema_datas = search(['cinema'], [])
         return get_response(cinema_datas, sta_200)
-
-
-ns.add_resource(GetCinemaInfo, "/getCinemaInfo", endpoint="getCinemaInfo")
-
-
-class GetRoomInfo(Resource):
-    parser = reqparse.RequestParser()  # 参数模型
-    parser.add_argument('cinemaId', type=int, required=True, help="id")
-
-    @ns.expect(parser)  # 用于解析对应文档参数，
-    @ns.response(200, "Success response", room_info)  # 对应解析文档返回值
-    @ns.response(400, "Bad Request")
-    def get(self):
-        # result = []
-        args = int(request.args.get("cinemaId"))
-        room_datas = search(['room', 'cinema'], [args])
-        # for room_data in room_datas:
-        #     if room_data["cinemaId"] == args:
-        #         result.append(room_data)
-        # if len(result) == 0:
-        #     return error_response(sta_400)
-        return get_response(room_datas, sta_200)
-
-
-ns.add_resource(GetRoomInfo, "/getRoomInfo", endpoint="getRoomInfo")
-
-
-class GetSeatInfo(Resource):
-    parser = reqparse.RequestParser()  # 参数模型
-    parser.add_argument('roomId', type=int, required=True, help="id")
-
-    @ns.expect(parser)  # 用于解析对应文档参数，
-    @ns.response(200, "Success response", seat_info)  # 对应解析文档返回值
-    @ns.response(400, "Bad Request")
-    def get(self):
-        # result = []
-        args = int(request.args.get("roomId"))
-        seat_datas = search(['seat', 'room'], [args])
-        return get_response(seat_datas, sta_200)
-
-
-ns.add_resource(GetSeatInfo, "/getSeatInfo", endpoint="getSeatInfo")
-
-
-class GetSessionInfo(Resource):
-    @ns.response(200, "Success response", session_info)  # 对应解析文档返回值
-    def get(self):
-        session_datas = search(['session'], [])
-        return get_response(session_datas, sta_200)
-
-
-ns.add_resource(GetSessionInfo, "/getSessionInfo", endpoint="getSessionInfo")
-
-
-# POST METHOD
-class AddCinema(Resource):
+    
     @ns.expect(cinema_to_insert)
-    # @ns.marshal_with(cinema_to_insert, code=201)
-    @ns.response(201, "Created")  # 对应解析文档返回值
+    @ns.response(201, "Created")
     @ns.response(400, "Bad Request")
     def post(self):
-        # if request.headers['Content-Type'] == 'application/json':
         request_data = api.payload
         if 'info' not in request_data:
             return error_response(sta_400)
@@ -146,76 +89,10 @@ class AddCinema(Resource):
         insert(['cinema'], [info])
         return normal_response(sta_201)
 
-
-ns.add_resource(AddCinema, "/addCinema", endpoint="addCinema")
-
-
-class AddRoom(Resource):
-    @ns.expect(room_to_insert)
-    # @ns.marshal_with(room_to_insert, code=201)
-    @ns.response(201, "Created")  # 对应解析文档返回值
-    @ns.response(400, "Bad Request")
-    def post(self):
-        # if request.headers['Content-Type'] == 'application/json':
-        request_data = api.payload
-        if 'cinemaId' not in request_data or 'info' not in request_data:
-            return error_response(sta_400)
-        info = request_data['info']
-        cinema_id = request_data['cinemaId']
-        insert(['room', 'cinema'], [cinema_id, info])
-        return normal_response(sta_201)
-
-
-ns.add_resource(AddRoom, "/addRoom", endpoint="addRoom")
-
-
-class AddSeat(Resource):
-    @ns.expect(seat_to_insert)
-    # @ns.marshal_with(seat_to_insert, code=201)
-    @ns.response(201, "Created")  # 对应解析文档返回值
-    @ns.response(400, "Bad Request")
-    def post(self):
-        # if request.headers['Content-Type'] == 'application/json':
-        request_data = api.payload
-        if 'roomId' not in request_data or 'info' not in request_data:
-            return error_response(sta_400)
-        info = request_data['info']
-        room_id = request_data['roomId']
-        insert(['seat', 'room'], [room_id, info])
-        return normal_response(sta_201)
-
-
-ns.add_resource(AddSeat, "/addSeat", endpoint="addSeat")
-
-
-class AddSession(Resource):
-    @ns.expect(session_to_insert)
-    # @ns.marshal_with(session_to_insert, code=201)
-    @ns.response(201, "Created")  # 对应解析文档返回值
-    @ns.response(400, "Bad Request")
-    def post(self):
-        # if request.headers['Content-Type'] == 'application/json':
-        request_data = api.payload
-        if 'roomId' not in request_data or 'movieId' not in request_data or 'time' not in request_data:
-            return error_response(sta_400)
-        room_id = request_data['roomId']
-        movie_id = request_data['movieId']
-        time = request_data['time']
-        insert(['session', 'room', 'movie', 'time'], [room_id, movie_id, time])
-        return normal_response(sta_201)
-
-
-ns.add_resource(AddSession, "/addSession", endpoint="addSession")
-
-
-# PUT METHOD
-class EditCinemaInfo(Resource):
     @ns.expect(cinema_info)
-    # @ns.marshal_with(cinema_info)
-    @ns.response(200, "Success response")  # 对应解析文档返回值
+    @ns.response(200, "Success response")
     @ns.response(400, "Bad Request")
     def put(self):
-        # if request.headers['Content-Type'] == 'application/json':
         request_data = api.payload
         if 'cinemaId' not in request_data or 'info' not in request_data:
             return error_response(sta_400)
@@ -224,17 +101,48 @@ class EditCinemaInfo(Resource):
         update(['cinema'], [cinema_id, info])
         return normal_response(sta_200)
 
+    @ns.expect(cinema_to_delete)
+    @ns.response(204, "Deleted")
+    @ns.response(400, "Bad Request")
+    def delete(self):
+        request_data = api.payload
+        if 'cinemaId' not in request_data:
+            return error_response(sta_400)
+        cinema_id = int(request_data['cinemaId'])
+        delete(['cinema'], [cinema_id])
+        return normal_response(sta_204)
 
-ns.add_resource(EditCinemaInfo, "/editCinemaInfo", endpoint="editCinemaInfo")
+ns.add_resource(Cinema, "/cinema", endpoint="Cinema")
 
 
-class EditRoomInfo(Resource):
+# Room Model
+class Room(Resource):
+    parser = reqparse.RequestParser()  # 参数模型
+    parser.add_argument('cinemaId', type=int, required=True, help="id")
+    @ns.expect(parser)  # 用于解析对应文档参数，
+    @ns.response(200, "Success response", room_info)  # 对应解析文档返回值
+    @ns.response(400, "Bad Request")
+    def get(self):
+        args = int(request.args.get("cinemaId"))
+        room_datas = search(['room', 'cinema'], [args])
+        return get_response(room_datas, sta_200)
+
+    @ns.expect(room_to_insert)
+    @ns.response(201, "Created")
+    @ns.response(400, "Bad Request")
+    def post(self):
+        request_data = api.payload
+        if 'cinemaId' not in request_data or 'info' not in request_data:
+            return error_response(sta_400)
+        info = request_data['info']
+        cinema_id = request_data['cinemaId']
+        insert(['room', 'cinema'], [cinema_id, info])
+        return normal_response(sta_201)
+
     @ns.expect(room_info)
-    # @ns.marshal_with(room_info)
-    @ns.response(200, "Success response")  # 对应解析文档返回值
+    @ns.response(200, "Success response")
     @ns.response(400, "Bad Request")
     def put(self):
-        # if request.headers['Content-Type'] == 'application/json':
         request_data = api.payload
         if 'roomId' not in request_data or 'cinemaId' not in request_data or 'info' not in request_data:
             return error_response(sta_400)
@@ -244,17 +152,50 @@ class EditRoomInfo(Resource):
         update(['room', 'cinema'], [room_id, cinema_id, info])
         return normal_response(sta_200)
 
+    @ns.expect(room_to_delete)
+    @ns.response(204, "Deleted")
+    @ns.response(400, "Bad Request")
+    def delete(self):
+        request_data = api.payload
+        if 'roomId' not in request_data:
+            return error_response(sta_400)
+        room_id = int(request_data['roomId'])
+        delete(["room"], [room_id])
+        return normal_response(sta_200)
 
-ns.add_resource(EditRoomInfo, "/editRoomInfo", endpoint="editRoomInfo")
+
+ns.add_resource(Room, "/room", endpoint="Room")
 
 
-class EditSeatInfo(Resource):
+# Seat Model
+class Seat(Resource):
+    parser = reqparse.RequestParser()  # 参数模型
+    parser.add_argument('roomId', type=int, required=True, help="id")
+    @ns.expect(parser)  # 用于解析对应文档参数，
+    @ns.response(200, "Success response", seat_info)  # 对应解析文档返回值
+    @ns.response(400, "Bad Request")
+    def get(self):
+        # result = []
+        args = int(request.args.get("roomId"))
+        seat_datas = search(['seat', 'room'], [args])
+        return get_response(seat_datas, sta_200)
+
+    @ns.expect(seat_to_insert)
+    @ns.response(201, "Created")
+    @ns.response(400, "Bad Request")
+    def post(self):
+        request_data = api.payload
+        if 'roomId' not in request_data or 'info' not in request_data:
+            return error_response(sta_400)
+        info = request_data['info']
+        room_id = request_data['roomId']
+        insert(['seat', 'room'], [room_id, info])
+        return normal_response(sta_201)
+
     @ns.expect(seat_info)
-    # @ns.marshal_with(seat_info)
-    @ns.response(200, "Success response")  # 对应解析文档返回值
+    @ns.response(200, "Success response")
     @ns.response(400, "Bad Request")
     def put(self):
-        # if request.headers['Content-Type'] == 'application/json':
         request_data = api.payload
         if 'seatId' not in request_data or 'roomId' not in request_data or 'info' not in request_data:
             return error_response(sta_400)
@@ -264,17 +205,45 @@ class EditSeatInfo(Resource):
         update(['seat', 'room'], [seat_id, room_id, info])
         return normal_response(sta_200)
 
+    @ns.expect(seat_to_delete)
+    @ns.response(204, "Deleted")
+    @ns.response(400, "Bad Request")
+    def delete(self):
+        request_data = api.payload
+        if 'seatId' not in request_data:
+            return error_response(sta_400)
+        seat_id = int(request_data['seatId'])
+        delete(["seat"], [seat_id])
+        return normal_response(sta_200)
 
-ns.add_resource(EditSeatInfo, "/editSeatInfo", endpoint="editSeatInfo")
+
+ns.add_resource(Seat, "/seat", endpoint="Seat")
 
 
-class EditSessionInfo(Resource):
+# Session Model
+class Session(Resource):
+    @ns.response(200, "Success response", session_info)  # 对应解析文档返回值
+    def get(self):
+        session_datas = search(['session'], [])
+        return get_response(session_datas, sta_200)
+    
+    @ns.expect(session_to_insert)
+    @ns.response(201, "Created")
+    @ns.response(400, "Bad Request")
+    def post(self):
+        request_data = api.payload
+        if 'roomId' not in request_data or 'movieId' not in request_data or 'time' not in request_data:
+            return error_response(sta_400)
+        room_id = request_data['roomId']
+        movie_id = request_data['movieId']
+        time = request_data['time']
+        insert(['session', 'room', 'movie', 'time'], [room_id, movie_id, time])
+        return normal_response(sta_201)
+
     @ns.expect(session_info)
-    # @ns.marshal_with(room_info)
-    @ns.response(200, "Success response")  # 对应解析文档返回值
+    @ns.response(200, "Success response")
     @ns.response(400, "Bad Request")
     def put(self):
-        # if request.headers['Content-Type'] == 'application/json':
         request_data = api.payload
         if 'sessionId' not in request_data or 'roomId' not in request_data \
                 or 'movieId' not in request_data or 'time' not in request_data:
@@ -286,72 +255,10 @@ class EditSessionInfo(Resource):
         update(['session', 'room', 'movie', 'time'], [session_id, room_id, movie_id, time])
         return normal_response(sta_200)
 
-
-ns.add_resource(EditSessionInfo, "/editSessionInfo", endpoint="editSessionInfo")
-
-
-# DELETE METHOD
-class DeleteCinema(Resource):
-    @ns.expect(cinema_to_delete)
-    # @ns.marshal_with(cinema_to_delete)
-    @ns.response(204, "Deleted")  # 对应解析文档返回值
-    @ns.response(400, "Bad Request")
-    def delete(self):
-        # if request.headers['Content-Type'] == 'application/json':
-        request_data = api.payload
-        if 'cinemaId' not in request_data:
-            return error_response(sta_400)
-        cinema_id = int(request_data['cinemaId'])
-        delete(['cinema'], [cinema_id])
-        return normal_response(sta_204)
-
-
-ns.add_resource(DeleteCinema, "/deleteCinema", endpoint="deleteCinema")
-
-
-class DeleteRoom(Resource):
-    @ns.expect(room_to_delete)
-    # @ns.marshal_with(room_to_delete)
-    @ns.response(204, "Deleted")  # 对应解析文档返回值
-    @ns.response(400, "Bad Request")
-    def delete(self):
-        # if request.headers['Content-Type'] == 'application/json':
-        request_data = api.payload
-        if 'roomId' not in request_data:
-            return error_response(sta_400)
-        room_id = int(request_data['roomId'])
-        delete(["room"], [room_id])
-        return normal_response(sta_200)
-
-
-ns.add_resource(DeleteRoom, "/deleteRoom", endpoint="deleteRoom")
-
-
-class DeleteSeat(Resource):
-    @ns.expect(seat_to_delete)
-    # @ns.marshal_with(seat_to_delete)
-    @ns.response(204, "Deleted")  # 对应解析文档返回值
-    @ns.response(400, "Bad Request")
-    def delete(self):
-        # if request.headers['Content-Type'] == 'application/json':
-        request_data = api.payload
-        if 'seatId' not in request_data:
-            return error_response(sta_400)
-        seat_id = int(request_data['seatId'])
-        delete(["seat"], [seat_id])
-        return normal_response(sta_200)
-
-
-ns.add_resource(DeleteSeat, "/deleteSeat", endpoint="deleteSeat")
-
-
-class DeleteSession(Resource):
     @ns.expect(session_to_delete)
-    # @ns.marshal_with(session_to_delete)
-    @ns.response(204, "Deleted")  # 对应解析文档返回值
+    @ns.response(204, "Deleted")
     @ns.response(400, "Bad Request")
     def delete(self):
-        # if request.headers['Content-Type'] == 'application/json':
         request_data = api.payload
         if 'sessionId' not in request_data:
             return error_response(sta_400)
@@ -360,7 +267,8 @@ class DeleteSession(Resource):
         return normal_response(sta_200)
 
 
-ns.add_resource(DeleteSession, "/deleteSession", endpoint="deleteSession")
+ns.add_resource(Session, "/session", endpoint="Session")
+
 
 if __name__ == '__main__':
     app.run()

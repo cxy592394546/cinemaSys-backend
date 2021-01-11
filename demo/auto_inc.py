@@ -4,7 +4,7 @@ import pymysql
 
 def auto_inc(datatype):
     # 打开数据库连接
-    db = pymysql.connect(host, username, password, database)
+    db = pymysql.connect("106.14.220.105", "qingxu", "qingxu", "cinema_db")
 
     # 使用cursor()方法获取操作游标
     cursor = db.cursor()
